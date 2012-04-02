@@ -26,6 +26,7 @@ __all__ = ["Gedcom", "Element", "GedcomParseError"]
 
 # Global imports
 import string
+import re
 
 class Gedcom:
     """ Gedcom parser
@@ -43,16 +44,13 @@ class Gedcom:
 
     """
 
-    def __init__(self,file):
+    def __init__(self, filepath):
         """ Initialize a Gedcom parser. You must supply a Gedcom file.
         """
         self.__element_list = []
         self.__element_dict = {}
-        self.__element_top = Element(-1,"","TOP","",self.__element_dict)
-        self.__current_level = -1
-        self.__current_element = self.__element_top
-        self.__individuals = 0
-        self.__parse(file)
+        self.__element_top = Element(-1, "", "TOP", "", self.__element_dict)
+        self.__parse(filepath)
 
     def element_list(self):
         """ Return a list of all the elements in the Gedcom file.  The
@@ -69,119 +67,70 @@ class Gedcom:
 
     # Private methods
 
-    def __parse(self,file):
-        # open file
-        # go through the lines
-        f = open(file)
-        number = 1
-        for line in f.readlines():
-            self.__parse_line(number,line)
-            number += 1
-        self.__count()
+    def __parse(self, filepath):
+        """Open and parse file path as GEDCOM 5.5 formatted data."""
+        gedcom_file = open(filepath)
+        line_num = 1
+        last_elem = self.__element_top
+        for line in gedcom_file:
+            last_elem = self.__parse_line(line_num, line, last_elem)
+            line_num += 1
 
-    def __parse_line(self,number,line):
-        # each line should have: Level SP (Pointer SP)? Tag (SP Value)? (SP)? NL
-        # parse the line
-        parts = string.split(line)
-        place = 0
-        l = self.__level(number,parts,place)
-        place += 1
-        p = self.__pointer(number,parts,place)
-        if p != '':
-            place += 1
-        t = self.__tag(number,parts,place)
-        place += 1
-        v = self.__value(number,parts,place)
+    def __parse_line(self, line_num, line, last_elem):
+        """Parse a line from a GEDCOM 5.5 formatted document.
 
-        # create the element
-        if l > self.__current_level + 1:
-            self.__error(number,"Structure of GEDCOM file is corrupted")
-
-        e = Element(l,p,t,v,self.element_dict())
-        self.__element_list.append(e)
-        if p != '':
-            self.__element_dict[p] = e
-
-        if l > self.__current_level:
-            self.__current_element.add_child(e)
-            e.add_parent(self.__current_element)
+        Each line should have the following (bracketed items optional):
+        level + ' ' + [pointer + ' ' +] tag + [' ' + line_value]
+        """
+        ged_line_re = (
+            # Level must start with nonnegative int, no leading zeros.
+            '^(0|[1-9]+[0-9]*) ' +
+            # Pointer optional, if it exists it must be flanked by '@'
+            '(@[^@]+@ |)' +
+            # Tag must be alphanumeric string
+            '([A-Za-z0-9_]+)' +
+            # Value optional, consists of anything after a space to end of line
+            '( .*|)$'
+            )
+        if re.match(ged_line_re, line):
+            line_parts = re.match(ged_line_re, line).groups()
         else:
-            # l.value <= self.__current_level:
-            while (self.__current_element.level() != l - 1):
-                self.__current_element = self.__current_element.parent()
-            self.__current_element.add_child(e)
-            e.add_parent(self.__current_element)
+            errmsg = ("Line %d of document violates GEDCOM format" % line_num +
+                      "\nSee: http://homepages.rootsweb.ancestry.com/" +
+                      "~pmcbride/gedcom/55gctoc.htm")
+            raise SyntaxError(errmsg)
 
-        # finish up
-        self.__current_level = l
-        self.__current_element = e
+        level = int(line_parts[0])
+        pointer = line_parts[1].rstrip(' ')
+        tag = line_parts[2]
+        value = line_parts[3].lstrip(' ')
 
-    def __level(self,number,parts,place):
-        if len(parts) <= place:
-            self.__error(number,"Empty line")
-        try:
-            l = int(parts[place])
-        except ValueError:
-            self.__error(number,"Line must start with an integer level")
+        # Check level: should never be more than one higher than previous line.
+        if level > last_elem.level() + 1:
+            errmsg = ("Line %d of document violates GEDCOM format" % line_num +
+                      "\nLines must be no more than one level higher than " +
+                      "previous line.\nSee: http://homepages.rootsweb." +
+                      "ancestry.com/~pmcbride/gedcom/55gctoc.htm")
+            raise SyntaxError(errmsg)
 
-        if (l < 0):
-            self.__error(number,"Line must start with a positive integer")
+        # Create element. Store in list and dict, create children and parents.
+        element = Element(level, pointer, tag, value, self.__element_dict)
+        self.__element_list.append(element)
+        if pointer != '':
+            self.__element_dict[pointer] = element
 
-        return l
-
-    def __pointer(self,number,parts,place):
-        if len(parts) <= place:
-            self.__error(number,"Incomplete Line")
-        p = ''
-        part = parts[1]
-        if part[0] == '@':
-            if part[len(part)-1] == '@':
-                p = part
-                # could strip the pointer to remove the @ with
-                # string.strip(part,'@')
-                # but it may be useful to identify pointers outside this class
-            else:
-                self.__error(number,"Pointer element must start and end with @")
-        return p
-
-    def __tag(self,number,parts,place):
-        if len(parts) <= place:
-            self.__error(number,"Incomplete line")
-        return parts[place]
-
-    def __value(self,number,parts,place):
-        if len(parts) <= place:
-            return ''
-        p = self.__pointer(number,parts,place)
-        if p != '':
-            # rest of the line should be empty
-            if len(parts) > place + 1:
-                self.__error(number,"Too many elements")
-            return p
-        else:
-            # rest of the line should be ours
-            vlist = []
-            while place < len(parts):
-                vlist.append(parts[place])
-                place += 1
-            v = string.join(vlist)
-            return v
-            
-    def __error(self,number,text):
-        error = "Gedcom format error on line " + str(number) + ': ' + text
-        raise GedcomParseError, error
-
-    def __count(self):
-        # Count number of individuals
-        self.__individuals = 0
-        for e in self.__element_list:
-            if e.individual():
-                self.__individuals += 1
-
+        # Start with last element as parent, back up if necessary.
+        parent_elem = last_elem
+        while parent_elem.level() > level - 1:
+            parent_elem = parent_elem.parent()
+        # Add child to parent & parent to child.
+        parent_elem.add_child(element)
+        element.add_parent(parent_elem)
+        return element
 
     def __print(self):
         for e in self.element_list:
-            print string.join([str(e.level()),e.pointer(),e.tag(),e.value()])
+            print e
 
 
 class GedcomParseError(Exception):
