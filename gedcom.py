@@ -1,6 +1,7 @@
 #
 # Gedcom 5.5 Parser
 #
+# Copyright (C) 2012 Madeleine Price Ball
 # Copyright (C) 2005 Daniel Zappala (zappala [ at ] cs.byu.edu)
 # Copyright (C) 2005 Brigham Young University
 #
@@ -20,7 +21,8 @@
 #
 # Please see the GPL license at http://www.gnu.org/licenses/gpl.txt
 #
-# To contact the author, see http://faculty.cs.byu.edu/~zappala
+# This code based on work from Zappala, 2005.
+# To contact the Zappala, see http://faculty.cs.byu.edu/~zappala
 
 __all__ = ["Gedcom", "Element", "GedcomParseError"]
 
