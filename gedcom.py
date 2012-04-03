@@ -148,7 +148,7 @@ class Gedcom:
 
     def print_gedcom(self):
         """Write GEDCOM data to stdout."""
-        for element in self.element_list:
+        for element in self.element_list():
             print element
 
 
