@@ -25,7 +25,6 @@
 __all__ = ["Gedcom", "Element", "GedcomParseError"]
 
 # Global imports
-import string
 import re
 
 class Gedcom:
@@ -382,9 +381,9 @@ class Element:
                 # some older Gedcom files don't use child tags but instead
                 # place the name in the value of the NAME tag
                 if e.value() != "":
-                    name = string.split(e.value(),'/')
-                    first = string.strip(name[0])
-                    last = string.strip(name[1])
+                    name = e.value.split('/')
+                    first = name[0].strip()
+                    last = name[1].strip()
                 else:
                     for c in e.children():
                         if c.tag() == "GIVN":
@@ -417,7 +416,7 @@ class Element:
             if e.tag() == "BIRT":
                 for c in e.children():
                     if c.tag() == "DATE":
-                        datel = string.split(c.value())
+                        datel = c.value().split()
                         date = datel[len(datel)-1]
         if date == "":
             return -1
@@ -450,7 +449,7 @@ class Element:
             if e.tag() == "DEAT":
                 for c in e.children():
                     if c.tag() == "DATE":
-                        datel = string.split(c.value())
+                        datel = c.value().split()
                         date = datel[len(datel)-1]
         if date == "":
             return -1
@@ -506,7 +505,7 @@ class Element:
                     if g.tag() == "MARR":
                         for h in g.children():
                             if h.tag() == "DATE":
-                                datel = string.split(h.value())
+                                datel = h.value().split()
                                 date = datel[len(datel)-1]
                                 try:
                                     dates.append(int(date))
