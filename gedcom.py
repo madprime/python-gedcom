@@ -28,39 +28,36 @@ __all__ = ["Gedcom", "Element", "GedcomParseError"]
 import re
 
 class Gedcom:
-    """ Gedcom parser
+    """Parses and manipulates GEDCOM 5.5 format data
 
-    This parser is for the Gedcom 5.5 format.  For documentation of
-    this format, see
+    For documentation of the GEDCOM 5.5 format, see:
+    http://homepages.rootsweb.ancestry.com/~pmcbride/gedcom/55gctoc.htm
 
-    http://homepages.rootsweb.com/~pmcbride/gedcom/55gctoc.htm
-
-    This parser reads a GEDCOM file and parses it into a set of
-    elements.  These elements can be accessed via a list (the order of
-    the list is the same as the order of the elements in the GEDCOM
-    file), or a dictionary (the key to the dictionary is a unique
-    identifier that one element can use to point to another element).
-
+    This parser reads and parses a GEDCOM file.
+    Elements may be accessed via:
+      - a list (all elements, default order is same as in file)
+      - a dict (only elements with pointers, which are the keys)
     """
 
     def __init__(self, filepath):
-        """ Initialize a Gedcom parser. You must supply a Gedcom file.
-        """
+        """ Initialize a GEDCOM data object. You must supply a Gedcom file."""
         self.__element_list = []
         self.__element_dict = {}
         self.__element_top = Element(-1, "", "TOP", "", self.__element_dict)
         self.__parse(filepath)
 
     def element_list(self):
-        """ Return a list of all the elements in the Gedcom file.  The
-        elements are in the same order as they appeared in the file.
+        """ Return a list of all the elements in the Gedcom file.
+
+        By default elements are in the same order as they appeared in the file.
         """
         return self.__element_list
 
     def element_dict(self):
-        """ Return a dictionary of elements from the Gedcom file.  Only
-        elements identified by a pointer are listed in the dictionary.  The
-        key for the dictionary is the pointer.
+        """Return a dictionary of elements from the Gedcom file.
+
+        Only elements identified by a pointer are listed in the dictionary.
+        The keys for the dictionary are the pointers.
         """
         return self.__element_dict
 
@@ -127,9 +124,10 @@ class Gedcom:
         element.add_parent(parent_elem)
         return element
 
-    def __print(self):
-        for e in self.element_list:
-            print e
+    def print_gedcom(self):
+        """Write GEDCOM data to stdout."""
+        for element in self.element_list:
+            print element
 
 
 class GedcomParseError(Exception):
