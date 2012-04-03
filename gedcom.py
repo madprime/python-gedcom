@@ -124,6 +124,28 @@ class Gedcom:
         element.add_parent(parent_elem)
         return element
 
+    # Methods for analyzing relationships between individuals
+
+    def families(self, individual, family_type="FAMS"):
+        """ Return family elements listed for an individual. 
+
+        family_type can be FAMS (families where the individual is a spouse) or
+        FAMC (families where the individual is a child). If a value is not
+        provided, FAMS is default value.
+        """
+        if not individual.is_individual():
+            raise ValueError("Operation only valid for elements with INDI tag.")
+        families = []
+        for child in individual.children():
+            is_fams = (child.tag() == family_type and
+                       child.value() in self.__element_dict and
+                       self.__element_dict[child.value()].is_family())
+            if is_fams:
+                families.append(self.__element_dict[child.value()])
+        return families
+
+    # Other methods
+
     def print_gedcom(self):
         """Write GEDCOM data to stdout."""
         for element in self.element_list:
@@ -214,9 +236,13 @@ class Element:
         """ Add a parent element to this element """
         self.__parent = element
 
-    def individual(self):
+    def is_individual(self):
         """ Check if this element is an individual """
         return self.tag() == "INDI"
+
+    def is_family(self):
+        """ Check if this element is a family """
+        return self.tag() == "FAM"
 
     # criteria matching
 
@@ -358,21 +384,11 @@ class Element:
                 return True
         return False
 
-    def families(self):
-        """ Return a list of all of the family elements of a person. """
-        results = []
-        for e in self.children():
-            if e.tag() == "FAMS":
-                f = self.__dict.get(e.value(),None)
-                if f != None:
-                    results.append(f)
-        return results
-
     def name(self):
         """ Return a person's names as a tuple: (first,last) """
         first = ""
         last = ""
-        if not self.individual():
+        if not self.is_individual():
             return (first,last)
         for e in self.children():
             if e.tag() == "NAME":
@@ -394,7 +410,7 @@ class Element:
         """ Return the birth tuple of a person as (date,place) """
         date = ""
         place = ""
-        if not self.individual():
+        if not self.is_individual():
             return (date,place)
         for e in self.children():
             if e.tag() == "BIRT":
@@ -408,7 +424,7 @@ class Element:
     def birth_year(self):
         """ Return the birth year of a person in integer format """
         date = ""
-        if not self.individual():
+        if not self.is_individual():
             return date
         for e in self.children():
             if e.tag() == "BIRT":
@@ -427,7 +443,7 @@ class Element:
         """ Return the death tuple of a person as (date,place) """
         date = ""
         place = ""
-        if not self.individual():
+        if not self.is_individual():
             return (date,place)
         for e in self.children():
             if e.tag() == "DEAT":
@@ -441,7 +457,7 @@ class Element:
     def death_year(self):
         """ Return the death year of a person in integer format """
         date = ""
-        if not self.individual():
+        if not self.is_individual():
             return date
         for e in self.children():
             if e.tag() == "DEAT":
@@ -458,7 +474,7 @@ class Element:
 
     def deceased(self):
         """ Check if a person is deceased """
-        if not self.individual():
+        if not self.is_individual():
             return False
         for e in self.children():
             if e.tag() == "DEAT":
@@ -471,7 +487,7 @@ class Element:
         """
         date = ""
         place = ""
-        if not self.individual():
+        if not self.is_individual():
             return (date,place)
         for e in self.children():
             if e.tag() == "FAMS":
@@ -492,7 +508,7 @@ class Element:
         format.
         """
         dates = []
-        if not self.individual():
+        if not self.is_individual():
             return dates
         for e in self.children():
             if e.tag() == "FAMS":
