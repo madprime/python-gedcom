@@ -186,6 +186,19 @@ class Gedcom:
                 families.append(self.__element_dict[child.value()])
         return families
 
+    def get_family(self, family):
+        """Return array of family members: individual, spouse, and children."""
+        if not family.is_family():
+            raise ValueError("Operation only valid for elements with FAM tag.")
+        family_members = [ ]
+        for elem in family.children():
+            is_family = (elem.tag() == "HUSB" or
+                         elem.tag() == "WIFE" or
+                         elem.tag() == "CHIL")
+            if is_family and elem.value() in self.__element_dict:
+                family_members.append(self.__element_dict[elem.value()])
+        return family_members
+
     # Other methods
 
     def print_gedcom(self):
@@ -528,15 +541,6 @@ class Element:
         result = str(self)
         for e in self.children():
             result += '\n' + e.get_individual()
-        return result
-
-    def get_family(self):
-        result = self.get_individual()
-        for e in self.children():
-            if e.tag() == "HUSB" or e.tag() == "WIFE" or e.tag() == "CHIL":
-                f = self.__dict.get(e.value())
-                if f != None:
-                    result += '\n' + f.get_individual()
         return result
 
     def __str__(self):
