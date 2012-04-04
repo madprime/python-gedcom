@@ -126,7 +126,47 @@ class Gedcom:
         element.add_parent(parent_elem)
         return element
 
-    # Methods for analyzing relationships between individuals
+    # Methods for analyzing individuals and relationships between individuals
+
+    def marriages(self, individual):
+        """ Return list of marriage tuples (date, place) for an individual. """
+        marriages = []
+        if not individual.is_individual():
+            raise ValueError("Operation only valid for elements with INDI tag")
+        # Get and analyze families where individual is spouse.
+        fams_families = self.families(individual, "FAMS")
+        for family in fams_families:
+            for famdata in family.children():
+                if famdata.tag() == "MARR":
+                    for marrdata in famdata.children():
+                        date = ''
+                        place = ''
+                        if marrdata.tag() == "DATE":
+                            date = marrdata.value()
+                        if marrdata.tag() == "PLAC":
+                            place = marrdata.value()
+                        marriages.append((date, place))
+        return marriages
+
+    def marriage_years(self, individual):
+        """ Return list of marriage years (as int) for an individual. """
+        dates = []
+        if not individual.is_individual():
+            raise ValueError("Operation only valid for elements with INDI tag")
+        # Get and analyze families where individual is spouse.
+        fams_families = self.families(individual, "FAMS")
+        for family in fams_families:
+            for famdata in family.children():
+                if famdata.tag() == "MARR":
+                    for marrdata in famdata.children():
+                        if marrdata.tag() == "DATE":
+                            date = marrdata.value().split()[-1]
+                            try:
+                                dates.append(int(date))
+                            except ValueError:
+                                pass
+        return dates
+
 
     def families(self, individual, family_type="FAMS"):
         """ Return family elements listed for an individual. 
@@ -482,52 +522,6 @@ class Element:
             if e.tag() == "DEAT":
                 return True
         return False
-
-    def marriage(self):
-        """ Return a list of marriage tuples for a person, each listing
-        (date,place).
-        """
-        date = ""
-        place = ""
-        if not self.is_individual():
-            return (date,place)
-        for e in self.children():
-            if e.tag() == "FAMS":
-                f = self.__dict.get(e.value(),None)
-                if f == None:
-                    return (date,place)
-                for g in f.children():
-                    if g.tag() == "MARR":
-                        for h in g.children():
-                            if h.tag() == "DATE":
-                                date = h.value()
-                            if h.tag() == "PLAC":
-                                place = h.value()
-        return (date,place)
-
-    def marriage_years(self):
-        """ Return a list of marriage years for a person, each in integer
-        format.
-        """
-        dates = []
-        if not self.is_individual():
-            return dates
-        for e in self.children():
-            if e.tag() == "FAMS":
-                f = self.__dict.get(e.value(),None)
-                if f == None:
-                    return dates
-                for g in f.children():
-                    if g.tag() == "MARR":
-                        for h in g.children():
-                            if h.tag() == "DATE":
-                                datel = h.value().split()
-                                date = datel[len(datel)-1]
-                                try:
-                                    dates.append(int(date))
-                                except:
-                                    pass
-        return dates
 
     def get_individual(self):
         """ Return this element and all of its sub-elements """
