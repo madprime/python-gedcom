@@ -88,7 +88,9 @@ class Gedcom:
             # Tag must be alphanumeric string
             '([A-Za-z0-9_]+)' +
             # Value optional, consists of anything after a space to end of line
-            '( .*|)$'
+            '( [^\n\r]*|)' +
+            # End of line defined by \n or \r
+            '(\r|\n)'
             )
         if re.match(ged_line_re, line):
             line_parts = re.match(ged_line_re, line).groups()
