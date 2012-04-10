@@ -167,6 +167,21 @@ class Gedcom:
                                 pass
         return dates
 
+    def marriage_year_match(self, individual, year):
+        """ Check if one of the marriage years of an individual matches
+        the supplied year.  Year is an integer. """
+        years = self.marriage_years(individual)
+        return year in years
+
+    def marriage_range_match(self, individual, year1, year2):
+        """ Check if one of the marriage year of an individual is in a
+        given range.  Years are integers.
+        """
+        years = self.marriage_years(individual)
+        for year in years:
+            if year >= year1 and year <= year2:
+                return True
+        return False
 
     def families(self, individual, family_type="FAMS"):
         """ Return family elements listed for an individual. 
@@ -376,9 +391,6 @@ class Element:
              [year1] to [year2], including both [year1] and [year2].
         death=[year]
         deathrange=[year1-year2]
-        marriage=[year]
-        marriagerange=[year1-year2]
-
         """
 
         # error checking on the criteria
@@ -426,23 +438,7 @@ class Element:
                         match = False
                 except:
                     match = False
-            elif key == "marriage":
-                try:
-                    year = int(value)
-                    if not self.marriage_year_match(year):
-                        match = False
-                except:
-                    match = False
-            elif key == "marriagerange":
-                try:
-                    year1,year2 = value.split('-')
-                    year1 = int(year1)
-                    year2 = int(year2)
-                    if not self.marriage_range_match(year1,year2):
-                        match = False
-                except:
-                    match = False
-                    
+
         return match
 
     def surname_match(self,name):
@@ -479,22 +475,6 @@ class Element:
         year = self.death_year()
         if year >= year1 and year <= year2:
             return True
-        return False
-
-    def marriage_year_match(self,year):
-        """ Check if one of the marriage years of an individual matches
-        the supplied year.  Year is an integer. """
-        years = self.marriage_years()
-        return year in years
-
-    def marriage_range_match(self,year1,year2):
-        """ Check if one of the marriage year of an individual is in a
-        given range.  Years are integers.
-        """
-        years = self.marriage_years()
-        for year in years:
-            if year >= year1 and year <= year2:
-                return True
         return False
 
     def name(self):
