@@ -45,7 +45,7 @@ class Gedcom:
         """ Initialize a GEDCOM data object. You must supply a Gedcom file."""
         self.__element_list = []
         self.__element_dict = {}
-        self.__element_top = Element(-1, "", "TOP", "", self.__element_dict)
+        self.__element_top = Element(-1, "", "TOP", "")
         self.__parse(filepath)
 
     def element_list(self):
@@ -112,7 +112,7 @@ class Gedcom:
             raise SyntaxError(errmsg)
 
         # Create element. Store in list and dict, create children and parents.
-        element = Element(level, pointer, tag, value, self.__element_dict)
+        element = Element(level, pointer, tag, value)
         self.__element_list.append(element)
         if pointer != '':
             self.__element_dict[pointer] = element
@@ -244,17 +244,17 @@ class Element:
 
     """
 
-    def __init__(self,level,pointer,tag,value,dict):
-        """ Initialize an element.  You must include a level, pointer,
-        tag, value, and global element dictionary.  Normally initialized
-        by the Gedcom parser, not by a user.
+    def __init__(self,level,pointer,tag,value):
+        """ Initialize an element.  
+        
+        You must include a level, pointer, tag, and value. Normally 
+        initialized by the Gedcom parser, not by a user.
         """
         # basic element info
         self.__level = level
         self.__pointer = pointer
         self.__tag = tag
         self.__value = value
-        self.__dict = dict
         # structuring
         self.__children = []
         self.__parent = None
