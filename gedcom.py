@@ -186,6 +186,32 @@ class Gedcom:
                 families.append(self.__element_dict[child.value()])
         return families
 
+    def get_parents(self, indi, parent_type="ALL"):
+        """ Return elements corresponding to parents of an individual
+        
+        Optional parent_type. Default "ALL" returns all parents. "NAT" can be
+        used to specify only natural (genetic) parents. 
+        """
+        if not indi.is_individual():
+            raise ValueError("Operation only valid for elements with INDI tag.")
+        parents = []
+        famc_families = self.families(indi, "FAMC")
+        for family in famc_families:
+            if parent_type == "NAT":
+                for famrec in family.children():
+                    if famrec.tag() == "CHIL" and famrec.value() == indi.pointer():
+                        for chilrec in famrec.children():
+                            if chilrec.value() == "Natural":
+                                if chilrec.tag() == "_FREL":
+                                    parents = (parents + 
+                                               self.get_family_members(family, "WIFE"))
+                                elif chilrec.tag() == "_MREL":
+                                    parents = (parents +
+                                               self.get_family_members(family, "HUSB"))
+            else:
+                parents = parents + self.get_family_members(family, "PARENTS")
+        return parents
+
     def get_family_members(self, family, mem_type="ALL"):
         """Return array of family members: individual, spouse, and children.
 
