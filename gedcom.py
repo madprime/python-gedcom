@@ -186,6 +186,20 @@ class Gedcom:
                 families.append(self.__element_dict[child.value()])
         return families
 
+    def get_ancestors(self, indi, anc_type="ALL"):
+        """ Return elements corresponding to ancestors of an individual
+
+        Optional anc_type. Default "ALL" returns all ancestors, "NAT" can be
+        used to specify only natural (genetic) ancestors.
+        """
+        if not indi.is_individual():
+            raise ValueError("Operation only valid for elements with INDI tag.")
+        parents = self.get_parents(indi, anc_type)
+        ancestors = parents
+        for parent in parents:
+            ancestors = ancestors + self.get_ancestors(parent)
+        return ancestors
+
     def get_parents(self, indi, parent_type="ALL"):
         """ Return elements corresponding to parents of an individual
         
