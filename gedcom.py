@@ -186,15 +186,33 @@ class Gedcom:
                 families.append(self.__element_dict[child.value()])
         return families
 
-    def get_family(self, family):
-        """Return array of family members: individual, spouse, and children."""
+    def get_family_members(self, family, mem_type="ALL"):
+        """Return array of family members: individual, spouse, and children.
+
+        Optional argument mem_type can be used to return specific subsets.
+        "ALL": Default, return all members of the family
+        "PARENTS": Return individuals with "HUSB" and "WIFE" tags (parents)
+        "HUSB": Return individuals with "HUSB" tags (father)
+        "WIFE": Return individuals with "WIFE" tags (mother)
+        "CHIL": Return individuals with "CHIL" tags (children)
+        """
         if not family.is_family():
             raise ValueError("Operation only valid for elements with FAM tag.")
         family_members = [ ]
         for elem in family.children():
+            # Default is ALL
             is_family = (elem.tag() == "HUSB" or
                          elem.tag() == "WIFE" or
                          elem.tag() == "CHIL")
+            if mem_type == "PARENTS":
+                is_family = (elem.tag() == "HUSB" or
+                             elem.tag() == "WIFE")
+            elif mem_type == "HUSB":
+                is_family = (elem.tag() == "HUSB")
+            elif mem_type == "WIFE":
+                is_family = (elem.tag() == "WIFE")
+            elif mem_type == "CHIL":
+                is_family = (elem.tag() == "CHIL")
             if is_family and elem.value() in self.__element_dict:
                 family_members.append(self.__element_dict[elem.value()])
         return family_members
