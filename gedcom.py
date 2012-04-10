@@ -508,9 +508,11 @@ class Element:
                 # some older Gedcom files don't use child tags but instead
                 # place the name in the value of the NAME tag
                 if e.value() != "":
-                    name = e.value.split('/')
-                    first = name[0].strip()
-                    last = name[1].strip()
+                    name = e.value().split('/')
+                    if len(name) > 0:
+                        first = name[0].strip()
+                        if len(name) > 1:
+                            last = name[1].strip()
                 else:
                     for c in e.children():
                         if c.tag() == "GIVN":
