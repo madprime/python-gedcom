@@ -241,6 +241,22 @@ class Gedcom:
                 parents = parents + self.get_family_members(family, "PARENTS")
         return parents
 
+    def find_path_to_anc(self, desc, anc, path=None):
+        """ Return path from descendant to ancestor. """
+        if not desc.is_individual() and anc.is_individual():
+            raise ValueError("Operation only valid for elements with IND tag.")
+        if not path:
+            path = [desc]
+        if path[-1].pointer() == anc.pointer():
+            return path
+        else:
+            parents = self.get_parents(desc, "NAT")
+            for par in parents:
+                potential_path = self.find_path_to_anc(par, anc, path + [par])
+                if potential_path:
+                    return potential_path
+        return None
+
     def get_family_members(self, family, mem_type="ALL"):
         """Return array of family members: individual, spouse, and children.
 
