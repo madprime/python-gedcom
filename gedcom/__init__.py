@@ -545,8 +545,9 @@ class Element:
         """ Return the birth tuple of a person as (date,place) """
         date = ""
         place = ""
+        source = ()
         if not self.is_individual():
-            return (date,place)
+            return (date,place,source)
         for e in self.children():
             if e.tag() == "BIRT":
                 for c in e.children():
@@ -554,7 +555,9 @@ class Element:
                         date = c.value()
                     if c.tag() == "PLAC":
                         place = c.value()
-        return (date,place)
+                    if c.tag() == "SOUR":
+                        source = source + (c.value(),)
+        return (date,place,source)
 
     def birth_year(self):
         """ Return the birth year of a person in integer format """
@@ -578,6 +581,7 @@ class Element:
         """ Return the death tuple of a person as (date,place) """
         date = ""
         place = ""
+        source = ()
         if not self.is_individual():
             return (date,place)
         for e in self.children():
@@ -587,7 +591,9 @@ class Element:
                         date = c.value()
                     if c.tag() == "PLAC":
                         place = c.value()
-        return (date,place)
+                    if c.tag() == "SOUR":
+                        source = source + (c.value(),)
+        return (date,place,source)
 
     def death_year(self):
         """ Return the death year of a person in integer format """
