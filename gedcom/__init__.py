@@ -67,7 +67,7 @@ class Gedcom:
 
     def __parse(self, filepath):
         """Open and parse file path as GEDCOM 5.5 formatted data."""
-        gedcom_file = open(filepath)
+        gedcom_file = open(filepath, 'rU')
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
