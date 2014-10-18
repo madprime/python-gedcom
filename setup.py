@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='python-gedcom',
-    version='0.1dev',
+    version='0.1.1dev',
     packages=['gedcom',],
     license='GPLv2',
     package_dir={'': '.'},
