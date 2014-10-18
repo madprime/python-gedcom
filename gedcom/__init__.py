@@ -67,7 +67,7 @@ class Gedcom:
 
     def __parse(self, filepath):
         """Open and parse file path as GEDCOM 5.5 formatted data."""
-        gedcom_file = open(filepath)
+        gedcom_file = open(filepath, 'rU')
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
@@ -519,12 +519,35 @@ class Element:
                             last = c.value()
         return (first,last)
 
+    def gender(self):
+        """ Return the gender of a person in string format """
+        gender = ""
+        if not self.is_individual():
+            return gender
+        for e in self.children():
+            if e.tag() == "SEX":
+                gender = e.value()
+        return gender
+
+    def private(self):
+        """ Return if the person is marked private in boolean format """
+        private = False
+        if not self.is_individual():
+            return gender
+        for e in self.children():
+            if e.tag() == "PRIV":
+                private = e.value()
+                if private == 'Y':
+                    private = True
+        return private
+
     def birth(self):
         """ Return the birth tuple of a person as (date,place) """
         date = ""
         place = ""
+        source = ()
         if not self.is_individual():
-            return (date,place)
+            return (date,place,source)
         for e in self.children():
             if e.tag() == "BIRT":
                 for c in e.children():
@@ -532,7 +555,9 @@ class Element:
                         date = c.value()
                     if c.tag() == "PLAC":
                         place = c.value()
-        return (date,place)
+                    if c.tag() == "SOUR":
+                        source = source + (c.value(),)
+        return (date,place,source)
 
     def birth_year(self):
         """ Return the birth year of a person in integer format """
@@ -556,6 +581,7 @@ class Element:
         """ Return the death tuple of a person as (date,place) """
         date = ""
         place = ""
+        source = ()
         if not self.is_individual():
             return (date,place)
         for e in self.children():
@@ -565,7 +591,9 @@ class Element:
                         date = c.value()
                     if c.tag() == "PLAC":
                         place = c.value()
-        return (date,place)
+                    if c.tag() == "SOUR":
+                        source = source + (c.value(),)
+        return (date,place,source)
 
     def death_year(self):
         """ Return the death year of a person in integer format """
@@ -584,6 +612,66 @@ class Element:
             return int(date)
         except:
             return -1
+
+    def burial(self):
+        """ Return the burial tuple of a person as (date,place) """
+        date = ""
+        place = ""
+        source = ()
+        if not self.is_individual():
+            return (date,place)
+        for e in self.children():
+            if e.tag() == "BURI":
+                for c in e.children():
+                    if c.tag() == "DATE":
+                        date = c.value()
+                    if c.tag() == "PLAC":
+                        place = c.value()
+                    if c.tag() == "SOUR":
+                        source = source + (c.value(),)
+        return (date,place,source)
+
+    def census(self):
+        """ Return list of census tuples (date, place) for an individual. """
+        census = []
+        if not self.is_individual():
+            raise ValueError("Operation only valid for elements with INDI tag")
+        for pdata in self.children():
+            if pdata.tag() == "CENS":
+                date = ''
+                place = ''
+                source = ''
+                for indivdata in pdata.children():
+                    if indivdata.tag() == "DATE":
+                        date = indivdata.value()
+                    if indivdata.tag() == "PLAC":
+                        place = indivdata.value()
+                    if indivdata.tag() == "SOUR":
+                        source = source + (indivdata.value(),)
+                census.append((date, place, source))
+        return census
+
+    def last_updated(self):
+        """ Return the last updated date of a person as (date) """
+        date = ""
+        if not self.is_individual():
+            return (date)
+        for e in self.children():
+            if e.tag() == "CHAN":
+                for c in e.children():
+                    if c.tag() == "DATE":
+                        date = c.value()
+        return (date)
+
+    def occupation(self):
+        """ Return the occupation of a person as (date) """
+        occupation = ""
+        if not self.is_individual():
+            return (date)
+        for e in self.children():
+            if e.tag() == "OCCU":
+                occupation = e.value()
+        return occupation
 
     def deceased(self):
         """ Check if a person is deceased """
