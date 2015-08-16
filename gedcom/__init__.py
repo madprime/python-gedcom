@@ -295,7 +295,7 @@ class Gedcom:
     def print_gedcom(self):
         """Write GEDCOM data to stdout."""
         for element in self.element_list():
-            print element
+            print(element)
 
 
 class GedcomParseError(Exception):
@@ -306,7 +306,7 @@ class GedcomParseError(Exception):
         self.value = value
         
     def __str__(self):
-        return `self.value`
+        return repr(self.value)
 
 class Element:
     """ Gedcom element
