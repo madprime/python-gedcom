@@ -398,6 +398,13 @@ class Element:
         """ Return the parent element of this element """
         return self.__parent
 
+    def new_child(self,tag,pointer='',value=''):
+        """ Create and return a new child element of this element """
+        c = Element(self.level() + 1, pointer, tag, value, self.__crlf)
+        self.add_child(c)
+        c.add_parent(self)
+        return c
+
     def add_child(self,element):
         """ Add a child element to this element """
         self.children().append(element)
