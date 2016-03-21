@@ -393,6 +393,14 @@ class Element:
         """ Check if this element is a family """
         return self.tag() == "FAM"
 
+    def is_file(self):
+        """ Check if this element is a file """
+        return self.tag() == "FILE"
+
+    def is_object(self):
+        """ Check if this element is an object """
+        return self.tag() == "OBJE"
+
     # criteria matching
 
     def criteria_match(self,criteria):
