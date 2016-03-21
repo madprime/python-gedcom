@@ -63,6 +63,20 @@ class Gedcom:
         """
         return self.__element_dict
 
+    def root(self):
+        """ Returns a virtual root element containing all logical records as children
+
+        When printed, this element converts to an empty string.
+        """
+        return self.__element_top
+
+    def records(self):
+        """ Return a list of logical records in the GEDCOM file.
+
+        By default, elements are in the same order as they appeared in the file.
+        """
+        return self.root().children()
+
     # Private methods
 
     def __parse(self, filepath):
@@ -702,6 +716,8 @@ class Element:
 
     def __str__(self):
         """ Format this element as its original string """
+        if self.level() < 0:
+            return ''
         result = str(self.level())
         if self.pointer() != "":
             result += ' ' + self.pointer()
