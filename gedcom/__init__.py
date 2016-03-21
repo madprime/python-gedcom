@@ -310,8 +310,11 @@ class Gedcom:
     def print_gedcom(self):
         """Write GEDCOM data to stdout."""
         from sys import stdout
-        for element in self.element_list():
-            stdout.write(element)
+        self.save_gedcom(stdout)
+
+    def save_gedcom(self, open_file):
+        """ Save GEDCOM data to a file. """
+        open_file.write(self.root().get_individual())
 
 
 class GedcomParseError(Exception):
