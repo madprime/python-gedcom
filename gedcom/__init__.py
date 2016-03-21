@@ -386,6 +386,10 @@ class Element:
         """ Return the value of this element """
         return self.__value
 
+    def set_value(self, value):
+        """ Set the value of this element """
+        self.__value = value
+
     def children(self):
         """ Return the child elements of this element """
         return self.__children
