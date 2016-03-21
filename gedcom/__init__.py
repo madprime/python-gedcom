@@ -67,7 +67,7 @@ class Gedcom:
 
     def __parse(self, filepath):
         """Open and parse file path as GEDCOM 5.5 formatted data."""
-        gedcom_file = open(filepath, 'rU')
+        gedcom_file = open(filepath, 'rb')
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
@@ -90,7 +90,7 @@ class Gedcom:
             # Value optional, consists of anything after a space to end of line
             '( [^\n\r]*|)' +
             # End of line defined by \n or \r
-            '(\r|\n)'
+            '([\r\n]{1,2})'
             )
         if re.match(ged_line_re, line):
             line_parts = re.match(ged_line_re, line).groups()
@@ -104,6 +104,7 @@ class Gedcom:
         pointer = line_parts[1].rstrip(' ')
         tag = line_parts[2]
         value = line_parts[3][1:]
+        crlf = line_parts[4]
 
         # Check level: should never be more than one higher than previous line.
         if level > last_elem.level() + 1:
@@ -114,7 +115,7 @@ class Gedcom:
             raise SyntaxError(errmsg)
 
         # Create element. Store in list and dict, create children and parents.
-        element = Element(level, pointer, tag, value)
+        element = Element(level, pointer, tag, value, crlf)
         self.__element_list.append(element)
         if pointer != '':
             self.__element_dict[pointer] = element
@@ -294,8 +295,9 @@ class Gedcom:
 
     def print_gedcom(self):
         """Write GEDCOM data to stdout."""
+        from sys import stdout
         for element in self.element_list():
-            print(element)
+            stdout.write(element)
 
 
 class GedcomParseError(Exception):
@@ -335,7 +337,7 @@ class Element:
 
     """
 
-    def __init__(self,level,pointer,tag,value):
+    def __init__(self,level,pointer,tag,value,crlf="\n"):
         """ Initialize an element.  
         
         You must include a level, pointer, tag, and value. Normally 
@@ -346,6 +348,7 @@ class Element:
         self.__pointer = pointer
         self.__tag = tag
         self.__value = value
+        self.__crlf = crlf
         # structuring
         self.__children = []
         self.__parent = None
@@ -686,7 +689,7 @@ class Element:
         """ Return this element and all of its sub-elements """
         result = str(self)
         for e in self.children():
-            result += '\n' + e.get_individual()
+            result += e.get_individual()
         return result
 
     def __str__(self):
@@ -697,4 +700,5 @@ class Element:
         result += ' ' + self.tag()
         if self.value() != "":
             result += ' ' + self.value()
+        result += self.__crlf
         return result
