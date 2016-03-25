@@ -43,16 +43,33 @@ class Gedcom:
 
     def __init__(self, filepath):
         """ Initialize a GEDCOM data object. You must supply a Gedcom file."""
-        self.__element_list = []
-        self.__element_dict = {}
+        self.invalidate_cache()
         self.__element_top = Element(-1, "", "TOP", "")
         self.__parse(filepath)
+
+    def invalidate_cache(self):
+        """ Cause element_list() and element_dict() to return updated data.
+
+        The update gets deferred until each of the methods actually gets called.
+        """
+        self.__element_list = []
+        self.__element_dict = {}
 
     def element_list(self):
         """ Return a list of all the elements in the Gedcom file.
 
         By default elements are in the same order as they appeared in the file.
+
+        This list gets generated on-the-fly, but gets cached. If the database
+        was modified, you should call invalidate_cache() once to let this
+        method return updated data.
+
+        Consider using root() or records() to access the hierarchical GEDCOM
+        tree, unless you rarely modify the database.
         """
+        if not self.__element_list:
+            for e in self.records():
+                self.__build_list(e, self.__element_list)
         return self.__element_list
 
     def element_dict(self):
@@ -60,7 +77,13 @@ class Gedcom:
 
         Only elements identified by a pointer are listed in the dictionary.
         The keys for the dictionary are the pointers.
+
+        This dictionary gets generated on-the-fly, but gets cached. If the
+        database was modified, you should call invalidate_cache() once to let
+        this method return updated data.
         """
+        if not self.__element_dict:
+            self.__element_dict = { e.pointer(): e for e in self.records() if e.pointer() }
         return self.__element_dict
 
     def root(self):
@@ -130,9 +153,6 @@ class Gedcom:
 
         # Create element. Store in list and dict, create children and parents.
         element = Element(level, pointer, tag, value, crlf)
-        self.__element_list.append(element)
-        if pointer != '':
-            self.__element_dict[pointer] = element
 
         # Start with last element as parent, back up if necessary.
         parent_elem = last_elem
@@ -142,6 +162,12 @@ class Gedcom:
         parent_elem.add_child(element)
         element.add_parent(parent_elem)
         return element
+
+    def __build_list(self, e, elist):
+        """ Recursively add Elements to a list. """
+        elist.append(e)
+        for c in e.children():
+            self.__build_list(c, elist)
 
     # Methods for analyzing individuals and relationships between individuals
 
@@ -210,12 +236,13 @@ class Gedcom:
         if not individual.is_individual():
             raise ValueError("Operation only valid for elements with INDI tag.")
         families = []
+        element_dict = self.element_dict()
         for child in individual.children():
             is_fams = (child.tag() == family_type and
-                       child.value() in self.__element_dict and
-                       self.__element_dict[child.value()].is_family())
+                       child.value() in element_dict and
+                       element_dict[child.value()].is_family())
             if is_fams:
-                families.append(self.__element_dict[child.value()])
+                families.append(element_dict[child.value()])
         return families
 
     def get_ancestors(self, indi, anc_type="ALL"):
@@ -287,6 +314,7 @@ class Gedcom:
         if not family.is_family():
             raise ValueError("Operation only valid for elements with FAM tag.")
         family_members = [ ]
+        element_dict = self.element_dict()
         for elem in family.children():
             # Default is ALL
             is_family = (elem.tag() == "HUSB" or
@@ -301,8 +329,8 @@ class Gedcom:
                 is_family = (elem.tag() == "WIFE")
             elif mem_type == "CHIL":
                 is_family = (elem.tag() == "CHIL")
-            if is_family and elem.value() in self.__element_dict:
-                family_members.append(self.__element_dict[elem.value()])
+            if is_family and elem.value() in element_dict:
+                family_members.append(element_dict[elem.value()])
         return family_members
 
     # Other methods
