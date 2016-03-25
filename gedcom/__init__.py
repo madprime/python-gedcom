@@ -161,7 +161,6 @@ class Gedcom:
             parent_elem = parent_elem.parent()
         # Add child to parent & parent to child.
         parent_elem.add_child(element)
-        element.add_parent(parent_elem)
         return element
 
     def __build_list(self, e, elist):
@@ -434,15 +433,19 @@ class Element:
         """ Create and return a new child element of this element """
         c = Element(self.level() + 1, pointer, tag, value, self.__crlf)
         self.add_child(c)
-        c.add_parent(self)
         return c
 
     def add_child(self,element):
         """ Add a child element to this element """
         self.children().append(element)
+        element.add_parent(self)
         
     def add_parent(self,element):
-        """ Add a parent element to this element """
+        """ Add a parent element to this element
+
+        There's usually no need to call this method manually,
+        add_child() calls it automatically.
+        """
         self.__parent = element
 
     def is_individual(self):
