@@ -28,6 +28,7 @@ __all__ = ["Gedcom", "Element", "GedcomParseError"]
 
 # Global imports
 import re
+from sys import version_info
 
 class Gedcom:
     """Parses and manipulates GEDCOM 5.5 format data
@@ -108,7 +109,7 @@ class Gedcom:
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
-            last_elem = self.__parse_line(line_num, line, last_elem)
+            last_elem = self.__parse_line(line_num, line.decode('utf-8'), last_elem)
             line_num += 1
 
     def __parse_line(self, line_num, line, last_elem):
@@ -342,7 +343,10 @@ class Gedcom:
 
     def save_gedcom(self, open_file):
         """ Save GEDCOM data to a file. """
-        open_file.write(self.root().get_individual())
+        if version_info[0] >= 3:
+            open_file.write(self.root().get_individual())
+        else:
+            open_file.write(self.root().get_individual().encode('utf-8'))
 
 
 class GedcomParseError(Exception):
@@ -751,12 +755,18 @@ class Element:
 
     def get_individual(self):
         """ Return this element and all of its sub-elements """
-        result = str(self)
+        result = self.__unicode__()
         for e in self.children():
             result += e.get_individual()
         return result
 
     def __str__(self):
+        if version_info[0] >= 3:
+            return self.__unicode__()
+        else:
+            return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
         """ Format this element as its original string """
         if self.level() < 0:
             return ''
