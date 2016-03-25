@@ -1,6 +1,7 @@
 #
 # Gedcom 5.5 Parser
 #
+# Copyright (C) 2016 Andreas Oberritter
 # Copyright (C) 2012 Madeleine Price Ball
 # Copyright (C) 2005 Daniel Zappala (zappala [ at ] cs.byu.edu)
 # Copyright (C) 2005 Brigham Young University
@@ -153,7 +154,7 @@ class Gedcom:
             raise SyntaxError(errmsg)
 
         # Create element. Store in list and dict, create children and parents.
-        element = Element(level, pointer, tag, value, crlf)
+        element = Element(level, pointer, tag, value, crlf, multiline=False)
 
         # Start with last element as parent, back up if necessary.
         parent_elem = last_elem
@@ -385,7 +386,7 @@ class Element:
 
     """
 
-    def __init__(self,level,pointer,tag,value,crlf="\n"):
+    def __init__(self,level,pointer,tag,value,crlf="\n",multiline=True):
         """ Initialize an element.  
         
         You must include a level, pointer, tag, and value. Normally 
@@ -400,6 +401,8 @@ class Element:
         # structuring
         self.__children = []
         self.__parent = None
+        if multiline:
+            self.set_multiline_value(value)
 
     def level(self):
         """ Return the level of this element """
@@ -420,6 +423,69 @@ class Element:
     def set_value(self, value):
         """ Set the value of this element """
         self.__value = value
+
+    def multiline_value(self):
+        """ Return the value of this element including continuations """
+        result = self.value()
+        last_crlf = self.__crlf
+        for e in self.children():
+            tag = e.tag()
+            if tag == 'CONC':
+                result += e.value()
+                last_crlf = e.__crlf
+            elif tag == 'CONT':
+                result += last_crlf + e.value()
+                last_crlf = e.__crlf
+        return result
+
+    def __avail_chars(self):
+        n = len(self.__unicode__())
+        if n > 255:
+            return 0
+        return 255 - n
+
+    def __line_length(self, string):
+        total = len(string)
+        avail = self.__avail_chars()
+        if total <= avail:
+            return total
+
+        spaces = 0
+        while spaces < avail and string[avail - spaces - 1] == ' ':
+            spaces = spaces + 1
+        if spaces == avail:
+            return avail
+        return avail - spaces
+
+    def __set_bounded_value(self, value):
+        n = self.__line_length(value)
+        self.set_value(value[:n])
+        return n
+
+    def __add_bounded_child(self, tag, value):
+        c = self.new_child(tag)
+        return c.__set_bounded_value(value)
+
+    def __add_concatenation(self, string):
+        index = 0
+        size = len(string)
+        while index < size:
+            index = index + self.__add_bounded_child('CONC', string[index:])
+
+    def set_multiline_value(self, value):
+        """ Set the value of this element, adding continuation lines as necessary. """
+        self.set_value('')
+        self.children()[:] = [c for c in self.children() if c.tag() not in ('CONC', 'CONT')]
+
+        lines = value.splitlines()
+        if lines:
+            line = lines.pop(0)
+            n = self.__set_bounded_value(line)
+            self.__add_concatenation(line[n:])
+
+            for line in lines:
+                n = self.__add_bounded_child('CONT', line)
+                self.__add_concatenation(line[n:])
 
     def children(self):
         """ Return the child elements of this element """
