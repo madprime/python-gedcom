@@ -39,14 +39,19 @@ class Gedcom:
     Elements may be accessed via:
       - a list (all elements, default order is same as in file)
       - a dict (only elements with pointers, which are the keys)
+
+    Arguments:
+
+    unicode_errors - behavior for handling unicode decode errors. Specified as
+    a value passed as the `errors` argument of open().
     """
 
-    def __init__(self, filepath):
+    def __init__(self, filepath, unicode_errors=None):
         """ Initialize a GEDCOM data object. You must supply a Gedcom file."""
         self.__element_list = []
         self.__element_dict = {}
         self.__element_top = Element(-1, "", "TOP", "")
-        self.__parse(filepath)
+        self.__parse(filepath, unicode_errors=unicode_errors)
 
     def element_list(self):
         """ Return a list of all the elements in the Gedcom file.
@@ -65,9 +70,9 @@ class Gedcom:
 
     # Private methods
 
-    def __parse(self, filepath):
+    def __parse(self, filepath, unicode_errors=None):
         """Open and parse file path as GEDCOM 5.5 formatted data."""
-        gedcom_file = open(filepath, 'rU')
+        gedcom_file = open(filepath, 'rU', errors=unicode_errors)
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
