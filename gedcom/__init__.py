@@ -233,10 +233,10 @@ class Gedcom:
                     if famrec.tag() == "CHIL" and famrec.value() == indi.pointer():
                         for chilrec in famrec.children():
                             if chilrec.value() == "Natural":
-                                if chilrec.tag() == "_FREL":
+                                if chilrec.tag() == "_MREL":
                                     parents = (parents + 
                                                self.get_family_members(family, "WIFE"))
-                                elif chilrec.tag() == "_MREL":
+                                elif chilrec.tag() == "_FREL":
                                     parents = (parents +
                                                self.get_family_members(family, "HUSB"))
             else:
