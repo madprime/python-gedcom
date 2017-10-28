@@ -28,6 +28,7 @@ __all__ = ["Gedcom", "Element", "GedcomParseError"]
 
 # Global imports
 import re
+import sys
 
 class Gedcom:
     """Parses and manipulates GEDCOM 5.5 format data
@@ -292,11 +293,12 @@ class Gedcom:
 
     # Other methods
 
-    def print_gedcom(self):
-        """Write GEDCOM data to stdout."""
+    def print_gedcom(self, file=sys.stdout, flush=False):
+        """Write GEDCOM data to stream <file> (default is sys.stdout).
+        <flush> argument (default is False) as the same semantics than
+        in the print function. """
         for element in self.element_list():
-            print(element)
-
+            print(element, file=file, flush=flush)
 
 class GedcomParseError(Exception):
     """ Exception raised when a Gedcom parsing error occurs
