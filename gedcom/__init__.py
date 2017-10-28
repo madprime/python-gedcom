@@ -42,7 +42,7 @@ class Gedcom:
     """
 
     def __init__(self, filepath,
-                encoding='utf-8',
+                encoding=None,
                 errors=None,
                 opener=None):
         """ Initialize a GEDCOM data object. You must supply a Gedcom file."""
