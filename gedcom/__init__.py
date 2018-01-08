@@ -852,6 +852,3 @@ class Element:
             result += ' ' + self.value()
         result += self.__crlf
         return result
-
-
-gedcom = Gedcom('Stammbaum_Reincke.ged')
