@@ -749,8 +749,8 @@ class Element:
             if child.tag() == "DEAT":
                 for childOfChild in child.children():
                     if childOfChild.tag() == "DATE":
-                        datel = childOfChild.value().split()
-                        date = datel[len(datel) - 1]
+                        date_split = childOfChild.value().split()
+                        date = date_split[len(date_split) - 1]
         if date == "":
             return -1
         try:
