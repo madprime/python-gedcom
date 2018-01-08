@@ -41,12 +41,18 @@ class Gedcom:
       - a dict (only elements with pointers, which are the keys)
     """
 
-    def __init__(self, filepath):
+    def __init__(self, filepath,
+                encoding=None,
+                errors=None,
+                opener=None):
         """ Initialize a GEDCOM data object. You must supply a Gedcom file."""
         self.__element_list = []
         self.__element_dict = {}
         self.__element_top = Element(-1, "", "TOP", "")
-        self.__parse(filepath)
+        self.__parse(filepath,
+                encoding=encoding,
+                errors=errors,
+                opener=opener)
 
     def element_list(self):
         """ Return a list of all the elements in the Gedcom file.
@@ -64,10 +70,17 @@ class Gedcom:
         return self.__element_dict
 
     # Private methods
-
-    def __parse(self, filepath):
+    def __parse(self, filepath,
+                encoding='utf-8',
+                errors=None,
+                opener=None): 
         """Open and parse file path as GEDCOM 5.5 formatted data."""
-        gedcom_file = open(filepath, 'rU')
+        gedcom_file = open(filepath,
+                           mode = 'rU',
+                           encoding=encoding, 
+                           errors=errors, 
+                           newline='\r\n', # this is part of gedcom 5.5 spec
+                           opener=opener)
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
