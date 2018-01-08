@@ -1,6 +1,7 @@
 #
 # Gedcom 5.5 Parser
 #
+# Copyright (C) 2018 Nicklas Reincke (contact [ at ] reynke.com)
 # Copyright (C) 2016 Andreas Oberritter
 # Copyright (C) 2012 Madeleine Price Ball
 # Copyright (C) 2005 Daniel Zappala (zappala [ at ] cs.byu.edu)
@@ -30,6 +31,7 @@ __all__ = ["Gedcom", "Element", "GedcomParseError"]
 # Global imports
 import re
 from sys import version_info
+
 
 class Gedcom:
     """Parses and manipulates GEDCOM 5.5 format data
@@ -85,7 +87,7 @@ class Gedcom:
         this method return updated data.
         """
         if not self.__element_dict:
-            self.__element_dict = { e.pointer(): e for e in self.records() if e.pointer() }
+            self.__element_dict = {e.pointer(): e for e in self.records() if e.pointer()}
         return self.__element_dict
 
     def root(self):
@@ -121,16 +123,16 @@ class Gedcom:
         """
         ged_line_re = (
             # Level must start with nonnegative int, no leading zeros.
-            '^(0|[1-9]+[0-9]*) ' +
-            # Pointer optional, if it exists it must be flanked by '@'
-            '(@[^@]+@ |)' +
-            # Tag must be alphanumeric string
-            '([A-Za-z0-9_]+)' +
-            # Value optional, consists of anything after a space to end of line
-            '( [^\n\r]*|)' +
-            # End of line defined by \n or \r
-            '([\r\n]{1,2})'
-            )
+                '^(0|[1-9]+[0-9]*) ' +
+                # Pointer optional, if it exists it must be flanked by '@'
+                '(@[^@]+@ |)' +
+                # Tag must be alphanumeric string
+                '([A-Za-z0-9_]+)' +
+                # Value optional, consists of anything after a space to end of line
+                '( [^\n\r]*|)' +
+                # End of line defined by \n or \r
+                '([\r\n]{1,2})'
+        )
         if re.match(ged_line_re, line):
             line_parts = re.match(ged_line_re, line).groups()
         else:
@@ -277,7 +279,7 @@ class Gedcom:
                         for chilrec in famrec.children():
                             if chilrec.value() == "Natural":
                                 if chilrec.tag() == "_MREL":
-                                    parents = (parents + 
+                                    parents = (parents +
                                                self.get_family_members(family, "WIFE"))
                                 elif chilrec.tag() == "_FREL":
                                     parents = (parents +
@@ -314,7 +316,7 @@ class Gedcom:
         """
         if not family.is_family():
             raise ValueError("Operation only valid for elements with FAM tag.")
-        family_members = [ ]
+        family_members = []
         element_dict = self.element_dict()
         for elem in family.children():
             # Default is ALL
@@ -352,12 +354,13 @@ class Gedcom:
 class GedcomParseError(Exception):
     """ Exception raised when a Gedcom parsing error occurs
     """
-    
+
     def __init__(self, value):
         self.value = value
-        
+
     def __str__(self):
         return repr(self.value)
+
 
 class Element:
     """ Gedcom element
@@ -386,7 +389,7 @@ class Element:
 
     """
 
-    def __init__(self,level,pointer,tag,value,crlf="\n",multiline=True):
+    def __init__(self, level, pointer, tag, value, crlf="\n", multiline=True):
         """ Initialize an element.  
         
         You must include a level, pointer, tag, and value. Normally 
@@ -411,7 +414,7 @@ class Element:
     def pointer(self):
         """ Return the pointer of this element """
         return self.__pointer
-    
+
     def tag(self):
         """ Return the tag of this element """
         return self.__tag
@@ -495,18 +498,18 @@ class Element:
         """ Return the parent element of this element """
         return self.__parent
 
-    def new_child(self,tag,pointer='',value=''):
+    def new_child(self, tag, pointer='', value=''):
         """ Create and return a new child element of this element """
         c = Element(self.level() + 1, pointer, tag, value, self.__crlf)
         self.add_child(c)
         return c
 
-    def add_child(self,element):
+    def add_child(self, element):
         """ Add a child element to this element """
         self.children().append(element)
         element.add_parent(self)
-        
-    def add_parent(self,element):
+
+    def add_parent(self, element):
         """ Add a parent element to this element
 
         There's usually no need to call this method manually,
@@ -532,7 +535,7 @@ class Element:
 
     # criteria matching
 
-    def criteria_match(self,criteria):
+    def criteria_match(self, criteria):
         """ Check in this element matches all of the given criteria.
         The criteria is a colon-separated list, where each item in the
 
@@ -554,12 +557,12 @@ class Element:
         # error checking on the criteria
         try:
             for crit in criteria.split(':'):
-                key,value = crit.split('=')
+                key, value = crit.split('=')
         except:
             return False
         match = True
         for crit in criteria.split(':'):
-            key,value = crit.split('=')
+            key, value = crit.split('=')
             if key == "surname" and not self.surname_match(value):
                 match = False
             elif key == "name" and not self.given_match(value):
@@ -573,10 +576,10 @@ class Element:
                     match = False
             elif key == "birthrange":
                 try:
-                    year1,year2 = value.split('-')
+                    year1, year2 = value.split('-')
                     year1 = int(year1)
                     year2 = int(year2)
-                    if not self.birth_range_match(year1,year2):
+                    if not self.birth_range_match(year1, year2):
                         match = False
                 except:
                     match = False
@@ -589,31 +592,31 @@ class Element:
                     match = False
             elif key == "deathrange":
                 try:
-                    year1,year2 = value.split('-')
+                    year1, year2 = value.split('-')
                     year1 = int(year1)
                     year2 = int(year2)
-                    if not self.death_range_match(year1,year2):
+                    if not self.death_range_match(year1, year2):
                         match = False
                 except:
                     match = False
 
         return match
 
-    def surname_match(self,name):
+    def surname_match(self, name):
         """ Match a string with the surname of an individual """
-        (first,last) = self.name()
+        (first, last) = self.name()
         return last.find(name) >= 0
 
-    def given_match(self,name):
+    def given_match(self, name):
         """ Match a string with the given names of an individual """
-        (first,last) = self.name()
+        (first, last) = self.name()
         return first.find(name) >= 0
 
-    def birth_year_match(self,year):
+    def birth_year_match(self, year):
         """ Match the birth year of an individual.  Year is an integer. """
         return self.birth_year() == year
 
-    def birth_range_match(self,year1,year2):
+    def birth_range_match(self, year1, year2):
         """ Check if the birth year of an individual is in a given range.
         Years are integers.
         """
@@ -622,11 +625,11 @@ class Element:
             return True
         return False
 
-    def death_year_match(self,year):
+    def death_year_match(self, year):
         """ Match the death year of an individual.  Year is an integer. """
         return self.death_year() == year
 
-    def death_range_match(self,year1,year2):
+    def death_range_match(self, year1, year2):
         """ Check if the death year of an individual is in a given range.
         Years are integers.
         """
@@ -640,7 +643,7 @@ class Element:
         first = ""
         last = ""
         if not self.is_individual():
-            return (first,last)
+            return (first, last)
         for e in self.children():
             if e.tag() == "NAME":
                 # some older Gedcom files don't use child tags but instead
@@ -657,7 +660,7 @@ class Element:
                             first = c.value()
                         if c.tag() == "SURN":
                             last = c.value()
-        return (first,last)
+        return (first, last)
 
     def gender(self):
         """ Return the gender of a person in string format """
@@ -687,7 +690,7 @@ class Element:
         place = ""
         source = ()
         if not self.is_individual():
-            return (date,place,source)
+            return (date, place, source)
         for e in self.children():
             if e.tag() == "BIRT":
                 for c in e.children():
@@ -697,7 +700,7 @@ class Element:
                         place = c.value()
                     if c.tag() == "SOUR":
                         source = source + (c.value(),)
-        return (date,place,source)
+        return (date, place, source)
 
     def birth_year(self):
         """ Return the birth year of a person in integer format """
@@ -709,7 +712,7 @@ class Element:
                 for c in e.children():
                     if c.tag() == "DATE":
                         datel = c.value().split()
-                        date = datel[len(datel)-1]
+                        date = datel[len(datel) - 1]
         if date == "":
             return -1
         try:
@@ -723,7 +726,7 @@ class Element:
         place = ""
         source = ()
         if not self.is_individual():
-            return (date,place)
+            return (date, place)
         for e in self.children():
             if e.tag() == "DEAT":
                 for c in e.children():
@@ -733,7 +736,7 @@ class Element:
                         place = c.value()
                     if c.tag() == "SOUR":
                         source = source + (c.value(),)
-        return (date,place,source)
+        return (date, place, source)
 
     def death_year(self):
         """ Return the death year of a person in integer format """
@@ -745,7 +748,7 @@ class Element:
                 for c in e.children():
                     if c.tag() == "DATE":
                         datel = c.value().split()
-                        date = datel[len(datel)-1]
+                        date = datel[len(datel) - 1]
         if date == "":
             return -1
         try:
@@ -759,7 +762,7 @@ class Element:
         place = ""
         source = ()
         if not self.is_individual():
-            return (date,place)
+            return (date, place)
         for e in self.children():
             if e.tag() == "BURI":
                 for c in e.children():
@@ -769,7 +772,7 @@ class Element:
                         place = c.value()
                     if c.tag() == "SOUR":
                         source = source + (c.value(),)
-        return (date,place,source)
+        return (date, place, source)
 
     def census(self):
         """ Return list of census tuples (date, place) for an individual. """
