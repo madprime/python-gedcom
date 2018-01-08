@@ -645,7 +645,7 @@ class Element:
         first = ""
         last = ""
         if not self.is_individual():
-            return (first, last)
+            return first, last
         for child in self.children():
             if child.tag() == "NAME":
                 # some older Gedcom files don't use child tags but instead
@@ -662,7 +662,7 @@ class Element:
                             first = childOfChild.value()
                         if childOfChild.tag() == "SURN":
                             last = childOfChild.value()
-        return (first, last)
+        return first, last
 
     def gender(self):
         """ Return the gender of a person in string format """
@@ -692,7 +692,7 @@ class Element:
         place = ""
         source = ()
         if not self.is_individual():
-            return (date, place, source)
+            return date, place, source
         for child in self.children():
             if child.tag() == "BIRT":
                 for childOfChild in child.children():
@@ -702,7 +702,7 @@ class Element:
                         place = childOfChild.value()
                     if childOfChild.tag() == "SOUR":
                         source = source + (childOfChild.value(),)
-        return (date, place, source)
+        return date, place, source
 
     def birth_year(self):
         """ Return the birth year of a person in integer format """
@@ -728,7 +728,7 @@ class Element:
         place = ""
         source = ()
         if not self.is_individual():
-            return (date, place)
+            return date, place
         for child in self.children():
             if child.tag() == "DEAT":
                 for childOfChild in child.children():
@@ -738,7 +738,7 @@ class Element:
                         place = childOfChild.value()
                     if childOfChild.tag() == "SOUR":
                         source = source + (childOfChild.value(),)
-        return (date, place, source)
+        return date, place, source
 
     def death_year(self):
         """ Return the death year of a person in integer format """
@@ -764,7 +764,7 @@ class Element:
         place = ""
         source = ()
         if not self.is_individual():
-            return (date, place)
+            return date, place
         for child in self.children():
             if child.tag() == "BURI":
                 for childOfChild in child.children():
@@ -774,7 +774,7 @@ class Element:
                         place = childOfChild.value()
                     if childOfChild.tag() == "SOUR":
                         source = source + (childOfChild.value(),)
-        return (date, place, source)
+        return date, place, source
 
     def census(self):
         """ Return list of census tuples (date, place) for an individual. """
@@ -800,19 +800,19 @@ class Element:
         """ Return the last updated date of a person as (date) """
         date = ""
         if not self.is_individual():
-            return (date)
+            return date
         for child in self.children():
             if child.tag() == "CHAN":
                 for childOfChild in child.children():
                     if childOfChild.tag() == "DATE":
                         date = childOfChild.value()
-        return (date)
+        return date
 
     def occupation(self):
         """ Return the occupation of a person as (date) """
         occupation = ""
         if not self.is_individual():
-            return (occupation)
+            return occupation
         for child in self.children():
             if child.tag() == "OCCU":
                 occupation = child.value()
