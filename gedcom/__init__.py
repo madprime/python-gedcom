@@ -480,7 +480,7 @@ class Element:
     def set_multi_line_value(self, value):
         """ Set the value of this element, adding continuation lines as necessary. """
         self.set_value('')
-        self.children()[:] = [c for c in self.children() if c.tag() not in ('CONC', 'CONT')]
+        self.children()[:] = [child for child in self.children() if child.tag() not in ('CONC', 'CONT')]
 
         lines = value.splitlines()
         if lines:
@@ -502,9 +502,9 @@ class Element:
 
     def new_child(self, tag, pointer='', value=''):
         """ Create and return a new child element of this element """
-        c = Element(self.level() + 1, pointer, tag, value, self.__crlf)
-        self.add_child(c)
-        return c
+        child = Element(self.level() + 1, pointer, tag, value, self.__crlf)
+        self.add_child(child)
+        return child
 
     def add_child(self, element):
         """ Add a child element to this element """
@@ -578,10 +578,10 @@ class Element:
                     match = False
             elif key == "birthrange":
                 try:
-                    year1, year2 = value.split('-')
-                    year1 = int(year1)
-                    year2 = int(year2)
-                    if not self.birth_range_match(year1, year2):
+                    from_year, to_year = value.split('-')
+                    from_year = int(from_year)
+                    to_year = int(to_year)
+                    if not self.birth_range_match(from_year, to_year):
                         match = False
                 except:
                     match = False
@@ -594,10 +594,10 @@ class Element:
                     match = False
             elif key == "deathrange":
                 try:
-                    year1, year2 = value.split('-')
-                    year1 = int(year1)
-                    year2 = int(year2)
-                    if not self.death_range_match(year1, year2):
+                    from_year, to_year = value.split('-')
+                    from_year = int(from_year)
+                    to_year = int(to_year)
+                    if not self.death_range_match(from_year, to_year):
                         match = False
                 except:
                     match = False
@@ -852,3 +852,6 @@ class Element:
             result += ' ' + self.value()
         result += self.__crlf
         return result
+
+
+gedcom = Gedcom('Stammbaum_Reincke.ged')
