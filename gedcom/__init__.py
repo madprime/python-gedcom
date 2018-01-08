@@ -1,6 +1,7 @@
 #
 # Gedcom 5.5 Parser
 #
+# Copyright (C) 2016 Andreas Oberritter
 # Copyright (C) 2012 Madeleine Price Ball
 # Copyright (C) 2005 Daniel Zappala (zappala [ at ] cs.byu.edu)
 # Copyright (C) 2005 Brigham Young University
@@ -28,6 +29,7 @@ __all__ = ["Gedcom", "Element", "GedcomParseError"]
 
 # Global imports
 import re
+from sys import version_info
 
 class Gedcom:
     """Parses and manipulates GEDCOM 5.5 format data
@@ -43,16 +45,33 @@ class Gedcom:
 
     def __init__(self, filepath):
         """ Initialize a GEDCOM data object. You must supply a Gedcom file."""
-        self.__element_list = []
-        self.__element_dict = {}
+        self.invalidate_cache()
         self.__element_top = Element(-1, "", "TOP", "")
         self.__parse(filepath)
+
+    def invalidate_cache(self):
+        """ Cause element_list() and element_dict() to return updated data.
+
+        The update gets deferred until each of the methods actually gets called.
+        """
+        self.__element_list = []
+        self.__element_dict = {}
 
     def element_list(self):
         """ Return a list of all the elements in the Gedcom file.
 
         By default elements are in the same order as they appeared in the file.
+
+        This list gets generated on-the-fly, but gets cached. If the database
+        was modified, you should call invalidate_cache() once to let this
+        method return updated data.
+
+        Consider using root() or records() to access the hierarchical GEDCOM
+        tree, unless you rarely modify the database.
         """
+        if not self.__element_list:
+            for e in self.records():
+                self.__build_list(e, self.__element_list)
         return self.__element_list
 
     def element_dict(self):
@@ -60,18 +79,38 @@ class Gedcom:
 
         Only elements identified by a pointer are listed in the dictionary.
         The keys for the dictionary are the pointers.
+
+        This dictionary gets generated on-the-fly, but gets cached. If the
+        database was modified, you should call invalidate_cache() once to let
+        this method return updated data.
         """
+        if not self.__element_dict:
+            self.__element_dict = { e.pointer(): e for e in self.records() if e.pointer() }
         return self.__element_dict
+
+    def root(self):
+        """ Returns a virtual root element containing all logical records as children
+
+        When printed, this element converts to an empty string.
+        """
+        return self.__element_top
+
+    def records(self):
+        """ Return a list of logical records in the GEDCOM file.
+
+        By default, elements are in the same order as they appeared in the file.
+        """
+        return self.root().children()
 
     # Private methods
 
     def __parse(self, filepath):
         """Open and parse file path as GEDCOM 5.5 formatted data."""
-        gedcom_file = open(filepath, 'rU')
+        gedcom_file = open(filepath, 'rb')
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
-            last_elem = self.__parse_line(line_num, line, last_elem)
+            last_elem = self.__parse_line(line_num, line.decode('utf-8'), last_elem)
             line_num += 1
 
     def __parse_line(self, line_num, line, last_elem):
@@ -90,7 +129,7 @@ class Gedcom:
             # Value optional, consists of anything after a space to end of line
             '( [^\n\r]*|)' +
             # End of line defined by \n or \r
-            '(\r|\n)'
+            '([\r\n]{1,2})'
             )
         if re.match(ged_line_re, line):
             line_parts = re.match(ged_line_re, line).groups()
@@ -103,7 +142,8 @@ class Gedcom:
         level = int(line_parts[0])
         pointer = line_parts[1].rstrip(' ')
         tag = line_parts[2]
-        value = line_parts[3].lstrip(' ')
+        value = line_parts[3][1:]
+        crlf = line_parts[4]
 
         # Check level: should never be more than one higher than previous line.
         if level > last_elem.level() + 1:
@@ -114,10 +154,7 @@ class Gedcom:
             raise SyntaxError(errmsg)
 
         # Create element. Store in list and dict, create children and parents.
-        element = Element(level, pointer, tag, value)
-        self.__element_list.append(element)
-        if pointer != '':
-            self.__element_dict[pointer] = element
+        element = Element(level, pointer, tag, value, crlf, multiline=False)
 
         # Start with last element as parent, back up if necessary.
         parent_elem = last_elem
@@ -125,8 +162,13 @@ class Gedcom:
             parent_elem = parent_elem.parent()
         # Add child to parent & parent to child.
         parent_elem.add_child(element)
-        element.add_parent(parent_elem)
         return element
+
+    def __build_list(self, e, elist):
+        """ Recursively add Elements to a list. """
+        elist.append(e)
+        for c in e.children():
+            self.__build_list(c, elist)
 
     # Methods for analyzing individuals and relationships between individuals
 
@@ -195,12 +237,13 @@ class Gedcom:
         if not individual.is_individual():
             raise ValueError("Operation only valid for elements with INDI tag.")
         families = []
+        element_dict = self.element_dict()
         for child in individual.children():
             is_fams = (child.tag() == family_type and
-                       child.value() in self.__element_dict and
-                       self.__element_dict[child.value()].is_family())
+                       child.value() in element_dict and
+                       element_dict[child.value()].is_family())
             if is_fams:
-                families.append(self.__element_dict[child.value()])
+                families.append(element_dict[child.value()])
         return families
 
     def get_ancestors(self, indi, anc_type="ALL"):
@@ -272,6 +315,7 @@ class Gedcom:
         if not family.is_family():
             raise ValueError("Operation only valid for elements with FAM tag.")
         family_members = [ ]
+        element_dict = self.element_dict()
         for elem in family.children():
             # Default is ALL
             is_family = (elem.tag() == "HUSB" or
@@ -286,16 +330,23 @@ class Gedcom:
                 is_family = (elem.tag() == "WIFE")
             elif mem_type == "CHIL":
                 is_family = (elem.tag() == "CHIL")
-            if is_family and elem.value() in self.__element_dict:
-                family_members.append(self.__element_dict[elem.value()])
+            if is_family and elem.value() in element_dict:
+                family_members.append(element_dict[elem.value()])
         return family_members
 
     # Other methods
 
     def print_gedcom(self):
         """Write GEDCOM data to stdout."""
-        for element in self.element_list():
-            print(element)
+        from sys import stdout
+        self.save_gedcom(stdout)
+
+    def save_gedcom(self, open_file):
+        """ Save GEDCOM data to a file. """
+        if version_info[0] >= 3:
+            open_file.write(self.root().get_individual())
+        else:
+            open_file.write(self.root().get_individual().encode('utf-8'))
 
 
 class GedcomParseError(Exception):
@@ -335,7 +386,7 @@ class Element:
 
     """
 
-    def __init__(self,level,pointer,tag,value):
+    def __init__(self,level,pointer,tag,value,crlf="\n",multiline=True):
         """ Initialize an element.  
         
         You must include a level, pointer, tag, and value. Normally 
@@ -346,9 +397,12 @@ class Element:
         self.__pointer = pointer
         self.__tag = tag
         self.__value = value
+        self.__crlf = crlf
         # structuring
         self.__children = []
         self.__parent = None
+        if multiline:
+            self.set_multiline_value(value)
 
     def level(self):
         """ Return the level of this element """
@@ -366,6 +420,73 @@ class Element:
         """ Return the value of this element """
         return self.__value
 
+    def set_value(self, value):
+        """ Set the value of this element """
+        self.__value = value
+
+    def multiline_value(self):
+        """ Return the value of this element including continuations """
+        result = self.value()
+        last_crlf = self.__crlf
+        for e in self.children():
+            tag = e.tag()
+            if tag == 'CONC':
+                result += e.value()
+                last_crlf = e.__crlf
+            elif tag == 'CONT':
+                result += last_crlf + e.value()
+                last_crlf = e.__crlf
+        return result
+
+    def __avail_chars(self):
+        n = len(self.__unicode__())
+        if n > 255:
+            return 0
+        return 255 - n
+
+    def __line_length(self, string):
+        total = len(string)
+        avail = self.__avail_chars()
+        if total <= avail:
+            return total
+
+        spaces = 0
+        while spaces < avail and string[avail - spaces - 1] == ' ':
+            spaces = spaces + 1
+        if spaces == avail:
+            return avail
+        return avail - spaces
+
+    def __set_bounded_value(self, value):
+        n = self.__line_length(value)
+        self.set_value(value[:n])
+        return n
+
+    def __add_bounded_child(self, tag, value):
+        c = self.new_child(tag)
+        return c.__set_bounded_value(value)
+
+    def __add_concatenation(self, string):
+        index = 0
+        size = len(string)
+        while index < size:
+            index = index + self.__add_bounded_child('CONC', string[index:])
+
+    def set_multiline_value(self, value):
+        """ Set the value of this element, adding continuation lines as necessary. """
+        self.set_value('')
+        self.children()[:] = [c for c in self.children() if c.tag() not in ('CONC', 'CONT')]
+
+        lines = value.splitlines()
+        if lines:
+            line = lines.pop(0)
+            n = self.__set_bounded_value(line)
+            self.__add_concatenation(line[n:])
+
+            for line in lines:
+                n = self.__add_bounded_child('CONT', line)
+                self.__add_concatenation(line[n:])
+
     def children(self):
         """ Return the child elements of this element """
         return self.__children
@@ -374,12 +495,23 @@ class Element:
         """ Return the parent element of this element """
         return self.__parent
 
+    def new_child(self,tag,pointer='',value=''):
+        """ Create and return a new child element of this element """
+        c = Element(self.level() + 1, pointer, tag, value, self.__crlf)
+        self.add_child(c)
+        return c
+
     def add_child(self,element):
         """ Add a child element to this element """
         self.children().append(element)
+        element.add_parent(self)
         
     def add_parent(self,element):
-        """ Add a parent element to this element """
+        """ Add a parent element to this element
+
+        There's usually no need to call this method manually,
+        add_child() calls it automatically.
+        """
         self.__parent = element
 
     def is_individual(self):
@@ -389,6 +521,14 @@ class Element:
     def is_family(self):
         """ Check if this element is a family """
         return self.tag() == "FAM"
+
+    def is_file(self):
+        """ Check if this element is a file """
+        return self.tag() == "FILE"
+
+    def is_object(self):
+        """ Check if this element is an object """
+        return self.tag() == "OBJE"
 
     # criteria matching
 
@@ -684,17 +824,26 @@ class Element:
 
     def get_individual(self):
         """ Return this element and all of its sub-elements """
-        result = str(self)
+        result = self.__unicode__()
         for e in self.children():
-            result += '\n' + e.get_individual()
+            result += e.get_individual()
         return result
 
     def __str__(self):
+        if version_info[0] >= 3:
+            return self.__unicode__()
+        else:
+            return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
         """ Format this element as its original string """
+        if self.level() < 0:
+            return ''
         result = str(self.level())
         if self.pointer() != "":
             result += ' ' + self.pointer()
         result += ' ' + self.tag()
         if self.value() != "":
             result += ' ' + self.value()
+        result += self.__crlf
         return result
