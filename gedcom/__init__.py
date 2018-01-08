@@ -673,7 +673,7 @@ class Element:
         """ Return if the person is marked private in boolean format """
         private = False
         if not self.is_individual():
-            return gender
+            return private
         for e in self.children():
             if e.tag() == "PRIV":
                 private = e.value()
@@ -807,7 +807,7 @@ class Element:
         """ Return the occupation of a person as (date) """
         occupation = ""
         if not self.is_individual():
-            return (date)
+            return (occupation)
         for e in self.children():
             if e.tag() == "OCCU":
                 occupation = e.value()
