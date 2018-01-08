@@ -227,7 +227,7 @@ class Gedcom:
         """
         years = self.marriage_years(individual)
         for year in years:
-            if year >= year1 and year <= year2:
+            if year1 <= year <= year2:
                 return True
         return False
 
@@ -623,7 +623,7 @@ class Element:
         Years are integers.
         """
         year = self.birth_year()
-        if year >= year1 and year <= year2:
+        if year1 <= year <= year2:
             return True
         return False
 
@@ -636,7 +636,7 @@ class Element:
         Years are integers.
         """
         year = self.death_year()
-        if year >= year1 and year <= year2:
+        if year1 <= year <= year2:
             return True
         return False
 
