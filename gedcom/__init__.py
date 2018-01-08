@@ -47,6 +47,8 @@ class Gedcom:
 
     def __init__(self, file_path):
         """ Initialize a GEDCOM data object. You must supply a GEDCOM file."""
+        self.__element_list = []
+        self.__element_dict = {}
         self.invalidate_cache()
         self.__element_top = Element(-1, "", "TOP", "")
         self.__parse(file_path)
