@@ -74,8 +74,8 @@ class Gedcom:
         tree, unless you rarely modify the database.
         """
         if not self.__element_list:
-            for e in self.records():
-                self.__build_list(e, self.__element_list)
+            for element in self.records():
+                self.__build_list(element, self.__element_list)
         return self.__element_list
 
     def element_dict(self):
@@ -89,7 +89,7 @@ class Gedcom:
         this method return updated data.
         """
         if not self.__element_dict:
-            self.__element_dict = {e.pointer(): e for e in self.records() if e.pointer()}
+            self.__element_dict = {element.pointer(): element for element in self.records() if element.pointer()}
         return self.__element_dict
 
     def root(self):
@@ -111,11 +111,11 @@ class Gedcom:
     def __parse(self, file_path):
         """Open and parse file path as GEDCOM 5.5 formatted data."""
         gedcom_file = open(file_path, 'rb')
-        line_num = 1
-        last_elem = self.__element_top
+        line_number = 1
+        last_element = self.__element_top
         for line in gedcom_file:
-            last_elem = self.__parse_line(line_num, line.decode('utf-8'), last_elem)
-            line_num += 1
+            last_element = self.__parse_line(line_number, line.decode('utf-8'), last_element)
+            line_number += 1
 
     def __parse_line(self, line_num, line, last_elem):
         """Parse a line from a GEDCOM 5.5 formatted document.
