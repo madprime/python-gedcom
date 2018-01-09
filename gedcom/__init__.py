@@ -843,7 +843,3 @@ class Element:
             result += ' ' + self.value()
         result += self.__crlf
         return result
-
-
-gedcom = Gedcom('Stammbaum_Reincke(1).ged')
-print(gedcom.root().gender())
