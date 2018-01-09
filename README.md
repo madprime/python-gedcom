@@ -1,12 +1,7 @@
+# Python GEDCOM
 
-NEW MAINTAINER WANTED!
-
-Sorry I'm not keeping this project up-to-date. If you're interested in
-taking over, please let me know!
-
-Madeleine
-
-=======================================
+> **DEPRECATED**: This project is no longer maintained by madprime
+> and moved to https://github.com/reynke/python-gedcom.
 
 A python module for parsing, analyzing, and manipulating GEDCOM files.
 
