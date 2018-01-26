@@ -175,6 +175,28 @@ class Gedcom:
             self.__build_list(child, element_list)
 
     # Methods for analyzing individuals and relationships between individuals
+    def marriage(self, individual1, individual2):
+        """ Get de date and place of a marraige if this exists """
+        if not individual1.is_individual() and not individual2.is_individual():
+            raise ValueError("Operation only valid for elements with INDI tag")
+        # Get and analyze families where individual is spouse.
+        fams_families1 = set(self.families(individual1, "FAMS"))
+        fams_families2 = set(self.families(individual2, "FAMS"))
+        family = list(fams_families1.intersection(fams_families2))
+        if family:
+            # print family
+            # print family[0].children()
+            for famdata in family[0].children():
+                if famdata.tag() == "MARR" or famdata.tag() == 'DIV':
+                    for marrdata in famdata.children():
+                        date = ''
+                        place = ''
+                        if marrdata.tag() == "DATE":
+                            date = marrdata.value()
+                        if marrdata.tag() == "PLAC":
+                            place = marrdata.value()
+                        return date, place
+        return None, None
 
     def marriages(self, individual):
         """Return list of marriage tuples (date, place) for an individual"""
