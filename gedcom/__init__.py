@@ -103,7 +103,7 @@ class Gedcom:
             errmsg = ("Line %d of document violates GEDCOM format" % line_num +
                       "\nSee: http://homepages.rootsweb.ancestry.com/" +
                       "~pmcbride/gedcom/55gctoc.htm")
-            raise SyntaxError(errmsg)
+            raise GedcomParseError(errmsg)
 
         level = int(line_parts[0])
         pointer = line_parts[1].rstrip(' ')
@@ -116,7 +116,7 @@ class Gedcom:
                       "\nLines must be no more than one level higher than " +
                       "previous line.\nSee: http://homepages.rootsweb." +
                       "ancestry.com/~pmcbride/gedcom/55gctoc.htm")
-            raise SyntaxError(errmsg)
+            raise GedcomParseError(errmsg)
 
         # Create element. Store in list and dict, create children and parents.
         element = Element(level, pointer, tag, value)
